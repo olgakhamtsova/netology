@@ -1,0 +1,55 @@
+
+№1 Показывает количество отложенных рейсов
+SELECT COUNT(flight_id)
+FROM flights
+WHERE flights.scheduled_departure <> flights.actual_departure;
+
+№2 Показывает количество проданных билетов
+SELECT COUNT(DISTINCT ticket_no)
+FROM ticket_flights;
+
+№3 Выводит идентификатор и номер рейса, с наибольшей продолжительностью
+SELECT flight_id, flight_no,
+EXTRACT(EPOCH FROM AGE(actual_arrival, actual_departure))/3600
+FROM flights
+WHERE EXTRACT(EPOCH FROM AGE(actual_arrival, actual_departure)) = (SELECT MAX (EXTRACT(EPOCH FROM AGE(actual_arrival, actual_departure))) FROM flights)
+
+№4 Показывает количество типов самолетов, учавствующих в перелетах
+SELECT COUNT(DISTINCT model)
+FROM aircrafts;
+
+№5 Выводит название и код аэропорта, принявшего наибольшее количество рейсов
+SELECT airports.airport_name, flights.arrival_airport,
+COUNT(flights.flight_id) as count
+FROM flights INNER JOIN airports
+ON flights.arrival_airport = airports.airport_code 
+GROUP BY airports.airport_name, flights.arrival_airport
+ORDER BY count DESC LIMIT 1;
+
+№6 Выводит идентификаторы и номера рейсов, вылетевших без опоздания (20 шт)
+SELECT flights.flight_id, flights.flight_no FROM flights
+WHERE flights.scheduled_departure=flights.actual_departure
+LIMIT 20;
+
+№7 Показывает рейсы, вылетевшие в Ростов-на-Дону
+SELECT airports.city, flights.flight_id, flights.flight_no
+FROM airports
+LEFT JOIN flights
+ON airports.airport_code = flights.arrival_airport
+WHERE city = 'Ростов-на-Дону';
+
+№8 Показывает максимальное опоздание рейсов в каждом аэропорту
+SELECT DISTINCT arrival_airport, MAX (EXTRACT(EPOCH FROM AGE(actual_departure, scheduled_departure))/3600) 
+OVER (PARTITION BY arrival_airport) as max_delay
+FROM flights;
+
+№9 
+SELECT DISTINCT arrival_airport, AVG (EXTRACT(EPOCH FROM AGE(actual_departure, scheduled_departure))/3600) 
+OVER (PARTITION BY arrival_airport) as avg_delay
+FROM flights;
+
+№10 Считает количество аэропортов в каждой часовой зоне
+SELECT DISTINCT arrival_airport, MAX (EXTRACT(EPOCH FROM AGE(actual_departure, scheduled_departure))/3600) 
+postgres=# SELECT DISTINCT timezone, COUNT (airport_code) 
+OVER (PARTITION BY timezone)
+FROM airports;
